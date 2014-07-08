@@ -24,6 +24,8 @@ writer = csv.writer(wfile, delimiter=',', quotechar='"',quoting=csv.QUOTE_MINIMA
 badwfile = open("failed_bylines.csv", 'wb')
 badwriter = csv.writer(badwfile, delimiter=',', quotechar='"',quoting=csv.QUOTE_MINIMAL)
 
+#generate test set
+
 res = mc.sentenceList('sentence_number:1', '+publish_date:[2010-01-01T00:00:00Z TO 2014-6-01T00:00:00Z] AND +media_sets_id:1', start=0, rows=50, sort='random')
 
 for s in res[u'response'][u'docs']:
