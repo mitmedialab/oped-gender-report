@@ -1,1 +1,3 @@
 config.yaml
+*.swp
+mediacloud-api.log

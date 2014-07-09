@@ -1,3 +1,4 @@
+---
+# Mediacloud key and other configuration information
 mediacloud:
-  url:
   api_key:

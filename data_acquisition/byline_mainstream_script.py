@@ -2,6 +2,14 @@ import BeautifulSoup
 import csv
 import mediacloud
 import yaml
+import subprocess
+import os
+import datetime
+
+# downloads articles from Mediacould Mainstream Media
+# applies byline detection to them
+# and saves the results to a CSV in a folder defined by the
+# commit number
 
 f = open('config.yaml')
 api_key = yaml.load(f)['mediacloud']['api_key']
@@ -16,13 +24,28 @@ for row in reader_dict:
         media_dict[str(row[0])] = []
     media_dict[str(row[0])].append([row[1],row[2],row[3]])
     
-#build results file
+# create results file
+# results files are stored in test_results/COMMIT_NUMBER/
+# extracted_bylines includes all cases of a positive byline match
+# failed_bylines includes all cases of a negative byline match
+cmd = ['git', 'rev-parse', '--verify', 'HEAD']
+commit_number = subprocess.Popen(cmd, stdout=subprocess.PIPE ).communicate()[0].strip()
 
-wfile = open("extracted_bylines.csv", 'wb')
+results_path = os.path.join("test_results", commit_number)
+
+if not os.path.exists(results_path):
+    print(results_path)
+    os.makedirs(results_path)
+
+wfile = open(os.path.join("test_results", commit_number, "extracted_bylines.csv"), 'wb')
 writer = csv.writer(wfile, delimiter=',', quotechar='"',quoting=csv.QUOTE_MINIMAL)
 
-badwfile = open("failed_bylines.csv", 'wb')
+badwfile = open(os.path.join("test_results", commit_number, "failed_bylines.csv"), 'wb')
 badwriter = csv.writer(badwfile, delimiter=',', quotechar='"',quoting=csv.QUOTE_MINIMAL)
+
+# create logfile to associate results with dates
+with open(os.path.join("test_results", "byline_extraction.log"), "a") as extraction_log:
+    extraction_log.write("{0}: {1}\n".format(datetime.datetime.now().isoformat(), commit_number))
 
 #generate test set
 
