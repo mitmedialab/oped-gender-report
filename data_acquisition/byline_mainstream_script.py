@@ -5,6 +5,8 @@ import yaml
 import subprocess
 import os
 import datetime
+from evaluation_util import *
+#from gender_detector import GenderDetector
 
 # downloads articles from Mediacould Mainstream Media
 # applies byline detection to them
@@ -23,29 +25,21 @@ for row in reader_dict:
     if row[0] not in media_dict:
         media_dict[str(row[0])] = []
     media_dict[str(row[0])].append([row[1],row[2],row[3]])
+
+#load identifiers for evaluation storage
+eval_util = EvaluationUtil()
+# create evaluation folder if needed
+eval_util.create_eval_dir()
     
-# create results file
-# results files are stored in test_results/COMMIT_NUMBER/
-# extracted_bylines includes all cases of a positive byline match
-# failed_bylines includes all cases of a negative byline match
-cmd = ['git', 'rev-parse', '--verify', 'HEAD']
-commit_number = subprocess.Popen(cmd, stdout=subprocess.PIPE ).communicate()[0].strip()
-
-results_path = os.path.join("test_results", commit_number)
-
-if not os.path.exists(results_path):
-    print(results_path)
-    os.makedirs(results_path)
-
-wfile = open(os.path.join("test_results", commit_number, "extracted_bylines.csv"), 'wb')
+wfile = open(os.path.join(eval_util.eval_path, "extracted_bylines.csv"), 'wb')
 writer = csv.writer(wfile, delimiter=',', quotechar='"',quoting=csv.QUOTE_MINIMAL)
 
-badwfile = open(os.path.join("test_results", commit_number, "failed_bylines.csv"), 'wb')
+badwfile = open(os.path.join(eval_util.eval_path, "failed_bylines.csv"), 'wb')
 badwriter = csv.writer(badwfile, delimiter=',', quotechar='"',quoting=csv.QUOTE_MINIMAL)
 
 # create logfile to associate results with dates
-with open(os.path.join("test_results", "byline_extraction.log"), "a") as extraction_log:
-    extraction_log.write("{0}: {1}\n".format(datetime.datetime.now().isoformat(), commit_number))
+with open(os.path.join(eval_util.results_path, "byline_extraction.log"), "a") as extraction_log:
+    extraction_log.write("{0}: {1}\n".format(datetime.datetime.now().isoformat(), eval_util.commit_number))
 
 #generate test set
 
