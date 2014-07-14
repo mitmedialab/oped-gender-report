@@ -33,13 +33,13 @@ def extract_metadata(extractor, url=None, file_name=None, stories_id=None):
 def __main__():
 
     parser = optparse.OptionParser()
-    parser.add_option("-t", "--test", help="test base_meta.py on default dataset", dest="file_name")
+    parser.add_option("-t", "--test", help="test base_meta.py on default dataset")
     parser.add_option("-m", "--mediacloud", help="run base_meta.py on specified query", dest="mc_query")
     parser.add_option("-n", "--number", help="number of stories to process", dest="number")
     (opts, args) = parser.parse_args()
     
     results = csv.writer(open('./test_sets/test_set_small_results.csv','wb'),delimiter=',', quotechar='"',quoting=csv.QUOTE_MINIMAL)
-    results.writerow(['media_id']+['stories_id']+['publish date']+['url']+['byline from url']+['section from url']+['byline from first download']+['section from first download'])
+    results.writerow(['media_id']+['stories_id']+['publish date']+['url']+['byline from first download']+['section from first download'])
 
     if opts.file_name:
         test = csv.reader(open('./test_sets/test_set_small.csv','rU'))
@@ -50,9 +50,8 @@ def __main__():
                 extractor = MEDIA_BASEMETA_DICTIONARY[str(media_id)]
             else:
                 extractor = base_meta.BaseMeta()
-            byline_url, section_url = extract_metadata(extractor, url=row[3])
             byline_download, section_download = extract_metadata(extractor, file_name=(MEDIA_FILEPATH_DICTIONARY[str(media_id)]+str(row[1])+'.html'))
-            results.writerow([row[0]]+[row[1]]+[row[2]]+[row[3]]+[byline_url]+[section_url]+[byline_download]+[section_download])
+            results.writerow([row[0]]+[row[1]]+[row[2]]+[row[3]]+[byline_download]+[section_download])
 
     elif opts.mediacloud:
         api_key = yaml.load(open('config.yaml'))['mediacloud']['api_key']
@@ -67,6 +66,6 @@ def __main__():
                 extractor = base_meta.BaseMeta()
             byline_url, section_url = extract_metadata(extractor, url=s[u'url'])
             byline_download, section_download = extract_metadata(extractor, stories_id=s[u'stories_id'])
-            results.writerow([row[0]]+[row[1]]+[row[2]]+[row[3]]+[byline_url]+[section_url]+[byline_download]+[section_download])
+            results.writerow([row[0]]+[row[1]]+[row[2]]+[row[3]]+[byline_download]+[section_download])
 
 __main__()
