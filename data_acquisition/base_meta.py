@@ -107,8 +107,6 @@ class LATimesMeta(BaseMeta):
         def parse_byline(self, byline):
                 for reg in self.byline_patterns:
                         if re.match(reg, byline):
-                                print byline
-                                print re.match(reg, byline).group('byline')
                                 return re.match(reg, byline).group('byline')
                 return byline
     
