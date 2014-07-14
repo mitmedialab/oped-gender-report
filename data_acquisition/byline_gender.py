@@ -1,5 +1,6 @@
 from gender_detector import GenderDetector
 import nltk
+import re
 
 class BylineGender():
   def __init__(self):
@@ -12,10 +13,13 @@ class BylineGender():
       if(name is None):
         gender_result["unknown"] += 1
       else:
-        gender_result[self.detector.guess(name)] += 1
+        print name
+        gender_result[str(self.detector.guess(name))] += 1
     return gender_result
 
   def get_first_names(self, byline):
+    if byline is None or re.search('[0-9]',byline) is not None:
+      return []
     byline = byline.strip()
     spaces = byline.count(' ')
     commas = byline.count(',')

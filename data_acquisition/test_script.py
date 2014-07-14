@@ -2,6 +2,7 @@ import optparse
 import base_meta
 import mediacloud
 import csv
+from byline_gender import BylineGender
 
 MEDIA_BASEMETA_DICTIONARY = {
     '1' : base_meta.NYTimesMeta(),
@@ -23,26 +24,28 @@ MEDIA_FILEPATH_DICTIONARY = {
     '1150' : './test_sets/wsj/'
 }
 
+gender_detector = BylineGender()
+
 def extract_metadata(extractor, url=None, file_name=None, stories_id=None):
-    try:
-        extractor.make_soup(url=url,file_name=file_name,stories_id=stories_id)
-        return extractor.get_byline(), extractor.get_section()
-    except Exception as e:
-        return type(e), type(e)
+    #try:
+    extractor.make_soup(url=url,file_name=file_name,stories_id=stories_id)
+    return extractor.get_byline(), extractor.get_section()
+    #except Exception as e:
+    #    return None, type(e)
     
 def __main__():
 
     parser = optparse.OptionParser()
-    parser.add_option("-t", "--test", help="test base_meta.py on default dataset")
+    parser.add_option("-t", "--test", help="test base_meta.py on default dataset", dest="file_name")
     parser.add_option("-m", "--mediacloud", help="run base_meta.py on specified query", dest="mc_query")
     parser.add_option("-n", "--number", help="number of stories to process", dest="number")
     (opts, args) = parser.parse_args()
     
     results = csv.writer(open('./test_sets/test_set_small_results.csv','wb'),delimiter=',', quotechar='"',quoting=csv.QUOTE_MINIMAL)
-    results.writerow(['media_id']+['stories_id']+['publish date']+['url']+['byline from first download']+['section from first download'])
+    results.writerow(['media_id']+['stories_id']+['publish date']+['url']+['byline from first download']+['section from first download'] + ['female_byline'] + ['male_byline'] + ['unknown_byline'])
 
     if opts.file_name:
-        test = csv.reader(open('./test_sets/test_set_small.csv','rU'))
+        test = csv.reader(open('./test_sets/test_set_index.csv','rU'))
         test.next()
         for row in test:
             media_id = row[0]
@@ -51,7 +54,8 @@ def __main__():
             else:
                 extractor = base_meta.BaseMeta()
             byline_download, section_download = extract_metadata(extractor, file_name=(MEDIA_FILEPATH_DICTIONARY[str(media_id)]+str(row[1])+'.html'))
-            results.writerow([row[0]]+[row[1]]+[row[2]]+[row[3]]+[byline_download]+[section_download])
+            byline_gender = gender_detector.byline_gender(byline_download)
+            results.writerow([row[0]]+[row[1]]+[row[2]]+[row[3]]+[byline_download]+[section_download]+ [byline_gender['female']] + [byline_gender['male']] + [byline_gender['unknown']])
 
     elif opts.mediacloud:
         api_key = yaml.load(open('config.yaml'))['mediacloud']['api_key']

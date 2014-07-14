@@ -109,8 +109,8 @@ class LATimesMeta(BaseMeta):
 class HuffPoMeta(BaseMeta):
 
 	byline_tags = [['meta','name','author']]
-	def get_byline(self):
-		return BaseMeta.get_byline(self).split(' and ')
+	#def get_byline(self):
+	#	return BaseMeta.get_byline(self).split(' and ')
 
 
 class SalonMeta(BaseMeta):
