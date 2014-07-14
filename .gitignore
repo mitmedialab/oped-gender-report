@@ -35,7 +35,7 @@ nosetests.xml
 coverage.xml
 
 # Test sets
-./data_acquisition/test_sets/*/*.html
+data_acquisition/test_sets/*/*.html
 
 # Translations
 *.mo
