@@ -33,9 +33,9 @@ def extract_metadata(extractor, url=None, file_name=None, stories_id=None):
 def __main__():
 
     parser = optparse.OptionParser()
-    parser.add_option("-t", "--test", help="Test base_meta.py on this data set.", dest="file_name")
-    parser.add_option("-m", "--mediacloud", help="Run base_meta.py on the given MC query.", dest="mc_query")
-    parser.add_option("-n", "--number", help="Number of tests to run.", dest="number")
+    parser.add_option("-t", "--test", help="test base_meta.py on default dataset", dest="file_name")
+    parser.add_option("-m", "--mediacloud", help="run base_meta.py on specified query", dest="mc_query")
+    parser.add_option("-n", "--number", help="number of stories to process", dest="number")
     (opts, args) = parser.parse_args()
     
     results = csv.writer(open('./test_sets/test_set_small_results.csv','wb'),delimiter=',', quotechar='"',quoting=csv.QUOTE_MINIMAL)
