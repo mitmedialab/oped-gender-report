@@ -27,10 +27,7 @@ class BaseMeta():
 			self.soup = BeautifulSoup.BeautifulSoup(story[u'raw_first_download_file'])
 		elif url:
 			self.url = url
-                        try:
-                                self.soup = BeautifulSoup.BeautifulSoup(urllib2.urlopen(url).read())
-                        except urllib2.HTTPError as e:
-                                pass
+                        self.soup = BeautifulSoup.BeautifulSoup(urllib2.urlopen(url).read())
 		elif file_name:
 			self.url = file_name
 			self.soup = BeautifulSoup.BeautifulSoup(open(file_name,'r').read())
@@ -45,7 +42,7 @@ class BaseMeta():
                                         return self.soup.find(t[0], {t[1]:t[2]})['content']
                                 else:
                                         return self.soup.find(t[0], {t[1]:t[2]}).text
-                return ""
+                return ''
 
 	url_section_patterns = []	
 	section_tags = []
@@ -72,7 +69,6 @@ class BaseMeta():
                 return get_section().lower() in opinion_sections
                        
 
-
 class NYTimesMeta(BaseMeta):
 
         byline_tags = [['meta','name','author'],['span','class','byline-author'],['meta','name','clmst']]
@@ -82,9 +78,10 @@ class NYTimesMeta(BaseMeta):
         
         opinion_sections = ['opinion']
         
+
 class WashingtonPostMeta(BaseMeta):
 
-        byline_tags = [['span', 'class', 'blog-byline'], ['meta', 'name', 'dc.creator'],['meta','name','DC.creator']]
+        byline_tags = [['span', 'class', 'blog-byline'], ['meta', 'name', 'dc.creator'],['meta','name','DC.creator'],['div','id','byline']]
                 
         url_section_patterns = [r'http://feeds.washingtonpost.com/c/34656/f/[0-9]+/s/[A-Za-z0-9]+/(sc/[0-9]+/l|l)/0L0Swashingtonpost0N0C(?P<section>[A-Za-z0-9]+?)s0C[A-Za-z0-9]+/story01.htm',r'http://www.washingtonpost.com/wp-dyn/content/article/[0-9]{4}/[0-9]{2}/[0-9]{2}/AR[0-9]+.html?(nav|wprss)=rss_(?P<section>[A-Za-z0-9]+)(/columns$|/industries$|s$|$)']
         section_tags = [['meta', 'name', 'section']]
@@ -112,6 +109,8 @@ class LATimesMeta(BaseMeta):
 class HuffPoMeta(BaseMeta):
 
         byline_tags = [['meta','name','author']]
+        def get_byline(self):
+                return BaseMeta.get_byline(self).split(' and ')
 
 
 class SalonMeta(BaseMeta):
