@@ -5,8 +5,6 @@ import BeautifulSoup #using BeautifulSoup to make dealing with regex simpler
 import urllib2
 import sys
 
-MONTHS = ['January', 'February', 'March', 'April', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-
 class BaseMeta():
 
 	url = ""
