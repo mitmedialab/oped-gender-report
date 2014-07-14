@@ -17,7 +17,8 @@ class BaseMeta():
                         self.soup = soup
 
 	def make_soup(self, stories_id=None, url=None, file_name=None):
-                print "making soup"
+                self.url = ""
+                self.soup = BeautifulSoup.BeautifulSoup("")
 		if stories_id:
 			api_key = yaml.load(open('config.yaml'))['mediacloud']['api_key']
 			mc = mediacloud.api.MediaCloud(api_key)
@@ -64,17 +65,15 @@ class BaseMeta():
                                         return self.soup.find(tag[0], {tag[1]:tag[2]}).text
                 return ''
 
-                opinion_sections = []
-                def is_opinion(self, opinion_sections=None):
-                        if opinion_sections:
-                                self.opinion_sections = opinion_sections
-                        return get_section().lower() in opinion_sections
+        opinion_sections = []
+        def is_opinion(self, opinion_sections=None):
+                if opinion_sections:
+                        self.opinion_sections = opinion_sections
+                return get_section().lower() in opinion_sections
+                       
 
 
 class NYTimesMeta(BaseMeta):
-
-        url = ""
-        soup = BeautifulSoup.BeautifulSoup("")
 
         byline_tags = [['meta','name','author'],['span','class','byline-author'],['meta','name','clmst']]
         
@@ -94,9 +93,6 @@ class WashingtonPostMeta(BaseMeta):
 
 
 class WSJMeta(BaseMeta):
-
-        url = ""
-        soup = BeautifulSoup.BeautifulSoup("")
     
         byline_tags = [['meta', 'name', 'author']]
     
@@ -105,12 +101,39 @@ class WSJMeta(BaseMeta):
 
 class LATimesMeta(BaseMeta):
 
-        url = ""
-        soup = BeautifulSoup.BeautifulSoup("")
-
         byline_tags = [['span', 'class', 'byline'], ['div','class','trb-bylines'], ['address','class','trb_columnistInfo_columnistPortrait'], ['meta', 'name', 'author'],['div','id','mod-article-byline']]
     
         url_section_patterns = [r'http://feeds.latimes.com/~r/(latimes/)*(?P<section>[A-Za-z/]+)/~3']
         section_tags = [['meta', 'name', 'article.section']]
 
         opinion_sections = ['news/opinion','OpinionLa']
+
+
+class HuffPoMeta(BaseMeta):
+
+        byline_tags = [['meta','name','author']]
+
+
+class SalonMeta(BaseMeta):
+        
+        byline_tags = [['span','class','byline'],['a','rel','author']]
+
+
+class DailyBeastMeta(BaseMeta):
+
+        byline_tags = [['meta','name','authors'],['a','class','more-by-author']]
+
+
+class YaleMeta(BaseMeta):
+
+        byline_tags = [['div','class','entry-authors']]
+
+
+class PrincetonMeta(BaseMeta):
+
+        byline_tags = [['p','class','byline']]
+
+
+class ColumbiaMeta(BaseMeta):
+
+        byline_tags = [['div','class','article-authors']]
