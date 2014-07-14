@@ -5,6 +5,8 @@ import BeautifulSoup #using BeautifulSoup to make dealing with regex simpler
 import urllib2
 import sys
 
+MONTHS = ['January', 'February', 'March', 'April', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
 class BaseMeta():
 
 	url = ""
@@ -99,6 +101,16 @@ class WSJMeta(BaseMeta):
 class LATimesMeta(BaseMeta):
 
 	byline_tags = [['span', 'class', 'byline'], ['div','class','trb-bylines'], ['address','class','trb_columnistInfo_columnistPortrait'], ['meta', 'name', 'author'],['div','id','mod-article-byline']]
+        def get_byline(self):
+                return self.parse_byline(BaseMeta.get_byline(self))
+        byline_patterns = [r'((January|February|March|April|June|July|August|September|October|November|December)( \d\d?, \d\d\d\d\|)(By )?)(?P<byline>[A-Z]{1}[A-Za-z. -]+)($|, Los Angeles Times)']
+        def parse_byline(self, byline):
+                for reg in self.byline_patterns:
+                        if re.match(reg, byline):
+                                print byline
+                                print re.match(reg, byline).group('byline')
+                                return re.match(reg, byline).group('byline')
+                return byline
     
 	url_section_patterns = [r'http://feeds.latimes.com/~r/(latimes/)*(?P<section>[A-Za-z/]+)/~3']
 	section_tags = [['meta', 'name', 'article.section']]
