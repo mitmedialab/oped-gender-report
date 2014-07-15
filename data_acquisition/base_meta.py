@@ -73,7 +73,7 @@ class BaseMeta():
 
 class NYTimesMeta(BaseMeta):
 
-	byline_tags = [['meta','name','author'],['span','class','byline-author'],['meta','name','clmst']]
+	byline_tags = [['meta','name','author'],['span','class','byline-author'],['meta','name','clmst'],['meta','name','byl'],['h6','class','byline'],['meta','name','CLMST']]
         
 	url_section_patterns = [r'http://www.nytimes.com/[0-9]{4}/[0-9]{2}/[0-9]{2}/(?P<section>[A-Za-z0-9/]+)/']
 	section_tags = [['meta','name',re.compile('cg',re.I)]]
@@ -84,7 +84,15 @@ class NYTimesMeta(BaseMeta):
 class WashingtonPostMeta(BaseMeta):
 
 	byline_tags = [['span', 'class', 'blog-byline'], ['meta', 'name', 'dc.creator'],['meta','name','DC.creator'],['div','id','byline']]
-                
+        def get_byline(self):
+                return self.parse_byline(BaseMeta.get_byline(self))
+        byline_patterns = [r'\|{1}(\s+)?(?P<byline>[A-Za-z. -]+)']
+        def parse_byline(self, byline):
+                for reg in self.byline_patterns:
+                        if re.match(reg, byline):
+                                return re.match(reg, byline).group('byline')
+                return byline
+
 	url_section_patterns = [r'http://feeds.washingtonpost.com/c/34656/f/[0-9]+/s/[A-Za-z0-9]+/(sc/[0-9]+/l|l)/0L0Swashingtonpost0N0C(?P<section>[A-Za-z0-9]+?)s0C[A-Za-z0-9]+/story01.htm',r'http://www.washingtonpost.com/wp-dyn/content/article/[0-9]{4}/[0-9]{2}/[0-9]{2}/AR[0-9]+.html?(nav|wprss)=rss_(?P<section>[A-Za-z0-9]+)(/columns$|/industries$|s$|$)']
 	section_tags = [['meta', 'name', 'section']]
 
@@ -93,7 +101,7 @@ class WashingtonPostMeta(BaseMeta):
 
 class WSJMeta(BaseMeta):
     
-	byline_tags = [['meta', 'name', 'author']]
+	byline_tags = [['meta','name','article.author'],['meta', 'name', 'author'],['h3','class','byline'],['span','id','byline']]
 	
 	section_tags = [['meta', 'name', 'article.section']]
 
@@ -107,8 +115,6 @@ class LATimesMeta(BaseMeta):
         def parse_byline(self, byline):
                 for reg in self.byline_patterns:
                         if re.match(reg, byline):
-                                print byline
-                                print re.match(reg, byline).group('byline')
                                 return re.match(reg, byline).group('byline')
                 return byline
     
