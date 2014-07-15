@@ -4,6 +4,8 @@ import mediacloud
 import BeautifulSoup #using BeautifulSoup to make dealing with regex simpler
 import urllib2
 import sys
+import lxml.etree
+import json
 
 class BaseMeta():
 
@@ -33,6 +35,7 @@ class BaseMeta():
 			self.soup = BeautifulSoup.BeautifulSoup(open(file_name,'r').read())
                         
 	byline_tags = []
+        byline_javascript = []
 	def get_byline(self, byline_tags=None):
 		if byline_tags:
 			self.byline_tags = byline_tags
@@ -42,6 +45,7 @@ class BaseMeta():
 					return self.soup.find(t[0], {t[1]:t[2]})['content']
 				else:
 					return self.soup.find(t[0], {t[1]:t[2]}).text
+                print self.url
 		return ''
 
 	url_section_patterns = []	
@@ -60,7 +64,7 @@ class BaseMeta():
 					return self.soup.find(tag[0], {tag[1]:tag[2]})['content']
 				else:
 					return self.soup.find(tag[0], {tag[1]:tag[2]}).text
-		return ''
+                return ''
 
 	opinion_sections = []
 	def is_opinion(self, opinion_sections=None):
@@ -71,7 +75,7 @@ class BaseMeta():
 
 class NYTimesMeta(BaseMeta):
 
-	byline_tags = [['meta','name','author'],['span','class','byline-author'],['meta','name','clmst'],['meta','name','byl'],['h6','class','byline'],['meta','name','CLMST']]
+	byline_tags = [['meta','name','author'],['span','class','byline-author'],['meta','name','clmst'],['meta','name','byl'],['h6','class','byline'],['meta','name','CLMST'],['p','class','byline']]
         
 	url_section_patterns = [r'http://www.nytimes.com/[0-9]{4}/[0-9]{2}/[0-9]{2}/(?P<section>[A-Za-z0-9/]+)/']
 	section_tags = [['meta','name',re.compile('cg',re.I)]]
@@ -81,7 +85,7 @@ class NYTimesMeta(BaseMeta):
 
 class WashingtonPostMeta(BaseMeta):
 
-	byline_tags = [['span', 'class', 'blog-byline'], ['meta', 'name', 'dc.creator'],['meta','name','DC.creator'],['div','id','byline']]
+	byline_tags = [['meta','name','authors'],['span', 'class', 'blog-byline'], ['meta', 'name', 'dc.creator'],['meta','name','DC.creator'],['div','id','byline'],['p','class','posted'],['span','class','pb-byline']]
         def get_byline(self):
                 return self.parse_byline(BaseMeta.get_byline(self))
         byline_patterns = [r'\|{1}(\s+)?(?P<byline>[A-Za-z. -]+)']
@@ -108,7 +112,11 @@ class LATimesMeta(BaseMeta):
 
 	byline_tags = [['span', 'class', 'byline'], ['div','class','trb-bylines'], ['address','class','trb_columnistInfo_columnistPortrait'], ['meta', 'name', 'author'],['div','id','mod-article-byline']]
         def get_byline(self):
-                return self.parse_byline(BaseMeta.get_byline(self))
+                byline = BaseMeta.get_byline(self)
+#                if byline == '':
+ #                       if self.soup.find('p', text=re.compile(r'(&#0160;){0,1}--( )?[A-Za-z\. \-]+(&#0160;){0,1}')) is not None:
+                                #byline = re.match(r'(&#0160;){0,1}--( )?(?P<byline>[A-Za-z\. \-]+)(&#0160;){0,1}',self.soup.find('p', text=re.compile(r'(&#0160;){0,1}--( )?[A-Za-z\. \-]+(&#0160;){0,1}'))).group('byline')
+                return self.parse_byline(byline)
         byline_patterns = [r'((January|February|March|April|June|July|August|September|October|November|December)( \d\d?, \d\d\d\d\|)(By )?)(?P<byline>[A-Z]{1}[A-Za-z. -]+)($|, Los Angeles Times)']
         def parse_byline(self, byline):
                 for reg in self.byline_patterns:
@@ -136,8 +144,10 @@ class SalonMeta(BaseMeta):
 
 class DailyBeastMeta(BaseMeta):
 
-	byline_tags = [['meta','name','authors'],['a','class','more-by-author']]
+	byline_tags = [['meta','name','authors'],['a','class','more-by-author'],['div','class','author1']]
 
+        url_section_patterns = [r'http://(www.thedailybeast.com/|feedproxy.google.com/~r/thedailybeast/)(?P<section>[A-Za-z-]+)/(~3|item)/']
+        
 
 class YaleMeta(BaseMeta):
 
