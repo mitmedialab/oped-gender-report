@@ -1,4 +1,5 @@
 #TO-DO: Switch to lxml to process js
+#       Factor out some byline parsing (e.g. removing 'by')
 
 import csv
 import re
@@ -116,6 +117,14 @@ class WashingtonPostMeta(BaseMeta):
 class WSJMeta(BaseMeta):
     
 	byline_tags = [['meta','name','article.author'],['meta', 'name', 'author'],['h3','class','byline'],['span','id','byline']]
+        def get_byline(self):
+                return self.parse_byline(BaseMeta.get_byline(self))
+        byline_patterns = [r'By[\s]*(?P<byline>[A-Z\-a-z0-9\. ]+)']
+        def parse_byline(self, byline):
+                for reg in self.byline_patterns:
+                        if re.match(reg, byline):
+                                return re.match(reg, byline).group('byline')
+                return byline
 	
 	section_tags = [['meta', 'name', 'article.section']]
 
