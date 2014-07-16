@@ -1,3 +1,5 @@
+#TO-DO: Switch to clearer argument structure, decide how to deal with case where there is no raw_first_download_file
+
 import argparse
 import base_meta
 import mediacloud
