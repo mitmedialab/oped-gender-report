@@ -80,6 +80,14 @@ class BaseMeta():
 class NYTimesMeta(BaseMeta):
 
 	byline_tags = [['meta','name','author'],['span','class','byline-author'],['meta','name','clmst'],['meta','name','byl'],['h6','class','byline'],['meta','name','CLMST'],['p','class','byline']]
+        def get_byline(self):
+                return self.parse_byline(BaseMeta.get_byline(self))
+        byline_patterns = [r'By (?P<byline>[A-Z .]+)']
+        def parse_byline(self, byline):
+                for reg in self.byline_patterns:
+                        if re.match(reg, byline):
+                                return re.match(reg, byline).group('byline')
+                return byline
         
 	url_section_patterns = [r'http://www.nytimes.com/[0-9]{4}/[0-9]{2}/[0-9]{2}/(?P<section>[A-Za-z0-9/]+)/']
 	section_tags = [['meta','name',re.compile('cg',re.I)]]
