@@ -1,3 +1,5 @@
+#TO-DO: Switch to lxml to process js
+
 import csv
 import re
 import mediacloud
@@ -25,8 +27,11 @@ class BaseMeta():
 			api_key = yaml.load(open('config.yaml'))['mediacloud']['api_key']
 			mc = mediacloud.api.MediaCloud(api_key)
 			story = mc.story(stories_id,raw_1st_download=1)
-			self.url = story[u'url']
-			self.soup = BeautifulSoup.BeautifulSoup(story[u'raw_first_download_file'])
+                        try:
+                                self.url = story[u'url']
+                                self.soup = BeautifulSoup.BeautifulSoup(story[u'raw_first_download_file'])
+                        except Exception as e:
+                                pass
 		elif url:
 			self.url = url
 			self.soup = BeautifulSoup.BeautifulSoup(urllib2.urlopen(url).read())
@@ -45,7 +50,6 @@ class BaseMeta():
 					return self.soup.find(t[0], {t[1]:t[2]})['content']
 				else:
 					return self.soup.find(t[0], {t[1]:t[2]}).text
-                print self.url
 		return ''
 
 	url_section_patterns = []	
