@@ -9,11 +9,9 @@ class BylineGender():
   def byline_gender(self,byline):
     gender_result = {"female":0, "male":0,"unknown":0}
     for name in self.get_first_names(byline):
-      print name
       if(name is None):
         gender_result["unknown"] += 1
       else:
-        print name
         gender_result[str(self.detector.guess(name))] += 1
     return gender_result
 
