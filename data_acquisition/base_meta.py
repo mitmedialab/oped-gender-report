@@ -162,7 +162,7 @@ class HuffPoMeta(BaseMeta):
 
 class SalonMeta(BaseMeta):
         
-	byline_tags = [['span','class','byline'],['a','rel','author']]
+	byline_tags = [['a','class','byline']]#,['a','rel','author']]
 
 
 class DailyBeastMeta(BaseMeta):
