@@ -1,10 +1,13 @@
 #TO-DO: Switch to lxml to process js
-#       Factor out some byline parsing (e.g. removing 'by')
+#	   Factor out some byline parsing (e.g. removing 'by')
 
 import csv
 import re
-import mediacloud
-import BeautifulSoup #using BeautifulSoup to make dealing with regex simpler
+try:
+	import mediacloud
+except:
+	pass
+from bs4 import BeautifulSoup #using BeautifulSoup to make dealing with regex simpler
 import urllib2
 import sys
 import lxml.etree
@@ -12,45 +15,49 @@ import json
 
 class BaseMeta():
 
-	url = ""
-	soup = BeautifulSoup.BeautifulSoup("")
+	url_name = ""
+	soup = BeautifulSoup("")
 
-	def __init__(self, url=None, soup=None):
-		if url:
-			self.url = url
+	def __init__(self, url_name=None, soup=None):
+		if url_name:
+			self.url = url_name
 		if soup:
-                	self.soup = soup
+			self.soup = soup
 
-	def make_soup(self, stories_id=None, url=None, file_name=None):
+	def make_soup(self, stories_id=None, url=None, file_name=None, url_name=None):
 		self.url = ""
-		self.soup = BeautifulSoup.BeautifulSoup("")
+		self.soup = BeautifulSoup("")
+		if url_name:
+			self.url = url_name
 		if stories_id:
 			api_key = yaml.load(open('config.yaml'))['mediacloud']['api_key']
 			mc = mediacloud.api.MediaCloud(api_key)
 			story = mc.story(stories_id,raw_1st_download=1)
-                        try:
-                                self.url = story[u'url']
-                                self.soup = BeautifulSoup.BeautifulSoup(story[u'raw_first_download_file'])
-                        except Exception as e:
-                                pass
+			if not url_name:
+				try:
+					self.url = story[u'url']
+					self.soup = BeautifulSoup(story[u'raw_first_download_file'])
+				except Exception as e:
+					pass
 		elif url:
-			self.url = url
-			self.soup = BeautifulSoup.BeautifulSoup(urllib2.urlopen(url).read())
+			if not url_name:
+				self.url = url
+			self.soup = BeautifulSoup(urllib2.urlopen(url).read())
 		elif file_name:
-			self.url = file_name
-			self.soup = BeautifulSoup.BeautifulSoup(open(file_name,'r').read())
-                        
+			if not url_name:
+				self.url = file_name
+			self.soup = BeautifulSoup(open(file_name,'r').read())
+
 	byline_tags = []
-        byline_javascript = []
 	def get_byline(self, byline_tags=None):
 		if byline_tags:
 			self.byline_tags = byline_tags
-		for t in self.byline_tags:
-			if self.soup.find(t[0],{t[1]:t[2]}) is not None:
-				if t[0]=='meta':
-					return self.soup.find(t[0], {t[1]:t[2]})['content']
-				else:
-					return self.soup.find(t[0], {t[1]:t[2]}).text
+		for tag_set in self.byline_tags:
+			found = self.soup.select(tag_set[0])
+			if found:
+				preparsed = found[0].text.encode('utf8') if tag_set[1] == 0 else found[0][tag_set[1]].encode('utf8')
+				match = re.match(tag_set[2], preparsed) if len(tag_set) > 2 else None
+				return match.group('byline') if match else preparsed
 		return ''
 
 	url_section_patterns = []	
@@ -61,127 +68,100 @@ class BaseMeta():
 		if section_tags:
 			self.section_tags = section_tags
 		for reg in self.url_section_patterns:
-			if re.match(reg,self.url):
-				return re.match(reg,self.url).group('section')
-		for tag in self.section_tags:
-			if self.soup.find(tag[0],{tag[1]:tag[2]}) is not None:
-				if tag[0]=='meta':
-					return self.soup.find(tag[0], {tag[1]:tag[2]})['content']
-				else:
-					return self.soup.find(tag[0], {tag[1]:tag[2]}).text
-                return ''
+			match = re.match(reg,self.url)
+			if match:
+				return (reg, match.group('section'))
+		for tag_set in self.section_tags:
+			found = self.soup.select(tag_set[0])
+			if found:
+				preparsed = found[0].text.encode('utf8') if tag_set[1] == 0 else found[0][tag_set[1]].encode('utf8')
+				match = re.match(tag_set[2], preparsed) if len(tag_set) > 2 else None
+				return match.group('section') if match else preparsed
+		return ''
 
 	opinion_sections = []
 	def is_opinion(self, opinion_sections=None):
-		if opinion_sections:
-			self.opinion_sections = opinion_sections
-                section = self.get_section()
-                if section:
-                        return section.lower() in self.opinion_sections
-
+		return self.get_section()[0].lower() in self.opinion_sections
 
 class NYTimesMeta(BaseMeta):
 
-	byline_tags = [['meta','name','author'],['span','class','byline-author'],['meta','name','clmst'],['meta','name','byl'],['h6','class','byline'],['meta','name','CLMST'],['p','class','byline']]
-        def get_byline(self):
-                return self.parse_byline(BaseMeta.get_byline(self))
-        byline_patterns = [r'By (?P<byline>[A-Z .]+)']
-        def parse_byline(self, byline):
-                for reg in self.byline_patterns:
-                        if re.match(reg, byline):
-                                return re.match(reg, byline).group('byline')
-                return byline
-        
+	byline_tags = [['meta[name="author"]','content'],['span[class="byline-author"]',0],['meta[name="clmst"]','content'],['meta[name="byl"]','content'],['h6[class="byline"]',0],['meta[name="CLMST"]','content'],['p[class="byline"]',0]]
+		
 	url_section_patterns = [r'http://www.nytimes.com/[0-9]{4}/[0-9]{2}/[0-9]{2}/(?P<section>[A-Za-z0-9/]+)/']
-	section_tags = [['meta','name',re.compile('cg',re.I)]]
-        
+	section_tags = [['meta[name="cg"]','content'],['meta[name="CG"]','content']]
+		
 	opinion_sections = ['opinion']
-        
+		
 
 class WashingtonPostMeta(BaseMeta):
 
-	byline_tags = [['meta','name','authors'],['span', 'class', 'blog-byline'], ['meta', 'name', 'dc.creator'],['meta','name','DC.creator'],['div','id','byline'],['p','class','posted'],['span','class','pb-byline']]
-        def get_byline(self):
-                return self.parse_byline(BaseMeta.get_byline(self))
-        byline_patterns = [r'\|{1}(\s+)?(?P<byline>[A-Za-z. -]+)']
-        def parse_byline(self, byline):
-                for reg in self.byline_patterns:
-                        if re.match(reg, byline):
-                                return re.match(reg, byline).group('byline')
-                return byline
-
+	byline_tags = [['meta[name="authors"]','content'],['meta[name="dc.creator"]','content'],['meta[name="DC.creator"]','content'],['span[class="blog-byline"]',0],['div[id="byline"]',0],['p[class="posted"]',0],['span[class="pb-byline"]',0]]
+	
 	url_section_patterns = [r'http://feeds.washingtonpost.com/c/34656/f/[0-9]+/s/[A-Za-z0-9]+/(sc/[0-9]+/l|l)/0L0Swashingtonpost0N0C(?P<section>[A-Za-z0-9]+?)s0C[A-Za-z0-9]+/story01.htm',r'http://www.washingtonpost.com/wp-dyn/content/article/[0-9]{4}/[0-9]{2}/[0-9]{2}/AR[0-9]+.html?(nav|wprss)=rss_(?P<section>[A-Za-z0-9]+)(/columns$|/industries$|s$|$)']
-	section_tags = [['meta', 'name', 'section']]
+	section_tags = [['meta[name="section"]','content']]
 
 	opinion_sections = ['opinion','blog']
 
 
 class WSJMeta(BaseMeta):
-    
-	byline_tags = [['meta','name','article.author'],['meta', 'name', 'author'],['h3','class','byline'],['span','id','byline']]
-        def get_byline(self):
-                return self.parse_byline(BaseMeta.get_byline(self))
-        byline_patterns = [r'By[\s]*(?P<byline>[A-Z\-a-z0-9\. ]+)']
-        def parse_byline(self, byline):
-                for reg in self.byline_patterns:
-                        if re.match(reg, byline):
-                                return re.match(reg, byline).group('byline')
-                return byline
 	
-	section_tags = [['meta', 'name', 'article.section']]
+	byline_tags = [['meta[name="article.author"]','content'],['meta[name="author"]','content'],['h3[class="byline"]',0],['span[id="byline"]',0],['p[id="byline"] a[href^="http://www.marketwatch.com/Journalists/"]',0],['p[class="emphasis"] span[class="credit"]',0]]
+	
+	section_tags = [['meta[name="article.section"]','content']]
 
 
 class LATimesMeta(BaseMeta):
 
-	byline_tags = [['span', 'class', 'byline'], ['div','class','trb-bylines'], ['address','class','trb_columnistInfo_columnistPortrait'], ['meta', 'name', 'author'],['div','id','mod-article-byline']]
-        def get_byline(self):
-                byline = BaseMeta.get_byline(self)
-#                if byline == '':
- #                       if self.soup.find('p', text=re.compile(r'(&#0160;){0,1}--( )?[A-Za-z\. \-]+(&#0160;){0,1}')) is not None:
-                                #byline = re.match(r'(&#0160;){0,1}--( )?(?P<byline>[A-Za-z\. \-]+)(&#0160;){0,1}',self.soup.find('p', text=re.compile(r'(&#0160;){0,1}--( )?[A-Za-z\. \-]+(&#0160;){0,1}'))).group('byline')
-                return self.parse_byline(byline)
-        byline_patterns = [r'((January|February|March|April|June|July|August|September|October|November|December)( \d\d?, \d\d\d\d\|)(By )?)(?P<byline>[A-Z]{1}[A-Za-z. -]+)($|, Los Angeles Times)']
-        def parse_byline(self, byline):
-                for reg in self.byline_patterns:
-                        if re.match(reg, byline):
-                                return re.match(reg, byline).group('byline')
-                return byline
-    
+	byline_tags = [['span[class="byline"]',0],['div[class="trb-bylines"]',0],['address[class="trb_columnistInfo_columnistPortrait"]',0],['div[id="mod-article-byline"]',0],['div[class="byline"]',0],['span[class="byline"]',0],['meta[name="author"]','content']]
+	#byline_patterns = [r'((January|February|March|April|June|July|August|September|October|November|December)( \d\d?, \d\d\d\d\|)(By )?)(?P<byline>[A-Z]{1}[A-Za-z. -]+)($|, Los Angeles Times)']
+	
 	url_section_patterns = [r'http://feeds.latimes.com/~r/(latimes/)*(?P<section>[A-Za-z/]+)/~3']
-	section_tags = [['meta', 'name', 'article.section']]
+	section_tags = [['meta[name="article.section"]','content']]
 
 	opinion_sections = ['news/opinion','OpinionLa']
 
 
 class HuffPoMeta(BaseMeta):
 
-	byline_tags = [['meta','name','author']]
+	byline_tags = [['meta[name="author"]','content']]
 	#def get_byline(self):
 	#	return BaseMeta.get_byline(self).split(' and ')
 
 
 class SalonMeta(BaseMeta):
-        
-	byline_tags = [['a','class','byline']]#,['a','rel','author']]
+		
+	byline_tags = [['div[class="articleInner"] span[class="byline"]',0],['a[rel="author"]',0]]
+	def get_byline(self):
+		byline = BaseMeta.get_byline(self)
+#		if byline == '':
+ #		   if self.soup.find('p', text=re.compile(r'(&#0160;){0,1}--( )?[A-Za-z\. \-]+(&#0160;){0,1}')) is not None:
+					#byline = re.match(r'(&#0160;){0,1}--( )?(?P<byline>[A-Za-z\. \-]+)(&#0160;){0,1}',self.soup.find('p', text=re.compile(r'(&#0160;){0,1}--( )?[A-Za-z\. \-]+(&#0160;){0,1}'))).group('byline')
+		return self.parse_byline(byline)
+	byline_patterns = [r'((M|m)ore ){1}(?P<byline>[A-Z]{1}[A-Za-z. -]+)']
+	def parse_byline(self, byline):
+		for reg in self.byline_patterns:
+			if re.match(reg, byline):
+				return re.match(reg, byline).group('byline')
+		return byline
 
 
 class DailyBeastMeta(BaseMeta):
 
-	byline_tags = [['meta','name','authors'],['a','class','more-by-author'],['div','class','author1']]
+	byline_tags = [['meta[name="authors"]','content'],['a[class="more-by-author"]',0],['div[class="author1"]',0]]
 
-        url_section_patterns = [r'http://(www.thedailybeast.com/|feedproxy.google.com/~r/thedailybeast/)(?P<section>[A-Za-z-]+)/(~3|item)/']
-        
+	url_section_patterns = [r'http://(www.thedailybeast.com/|feedproxy.google.com/~r/thedailybeast/)(?P<section>[A-Za-z-]+)/(~3|item)/']
+		
 
 class YaleMeta(BaseMeta):
 
-	byline_tags = [['div','class','entry-authors']]
+	byline_tags = [['div[class="entry-authors"]',0]]
 
 
 class PrincetonMeta(BaseMeta):
 
-	byline_tags = [['p','class','byline']]
+	byline_tags = [['p[class="byline"]',0]]
 
 
 class ColumbiaMeta(BaseMeta):
 
-	byline_tags = [['div','class','article-authors']]
+	byline_tags = [['div[class="article-authors"]',0]]
