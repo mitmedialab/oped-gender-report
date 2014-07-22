@@ -50,6 +50,7 @@ class BaseMeta():
 
 	byline_tags = []
 	def get_byline(self, byline_tags=None):
+		bylines = []
 		if byline_tags:
 			self.byline_tags = byline_tags
 		for tag_set in self.byline_tags:
@@ -57,7 +58,9 @@ class BaseMeta():
 			if found:
 				preparsed = found[0].text.encode('utf8') if tag_set[1] == 0 else found[0][tag_set[1]].encode('utf8')
 				match = re.match(tag_set[2], preparsed) if len(tag_set) > 2 else None
-				return match.group('byline') if match else preparsed
+				postparsed = match.group('byline').strip() if match else preparsed
+				match2 = re.match(r'(BY|By|by){1}[\s]+(?P<byline>[A-Za-z\.\- ]+)[\s\S]*', postparsed)
+				return match2.group('byline').strip() if match2 else postparsed
 		return ''
 
 	url_section_patterns = []	
@@ -83,9 +86,10 @@ class BaseMeta():
 	def is_opinion(self, opinion_sections=None):
 		return self.get_section()[0].lower() in self.opinion_sections
 
+
 class NYTimesMeta(BaseMeta):
 
-	byline_tags = [['meta[name="author"]','content'],['span[class="byline-author"]',0],['meta[name="clmst"]','content'],['meta[name="byl"]','content'],['h6[class="byline"]',0],['meta[name="CLMST"]','content'],['p[class="byline"]',0]]
+	byline_tags = [['meta[name="author"]','content'],['span[class="byline-author"]',0],['meta[name="clmst"]','content'],['meta[name="byl"]','content',r'By (?P<byline>[A-Za-z\.\- ]*)'],['meta[name="CLMST"]','content',r'By[\s]+(?P<byline>[A-Za-z\.\- ]*)'],['p[class="byline"]',0],['h6[class="byline"]',0,r'By[\s]+(?P<byline>[A-Za-z\.\- ]*)']]
 		
 	url_section_patterns = [r'http://www.nytimes.com/[0-9]{4}/[0-9]{2}/[0-9]{2}/(?P<section>[A-Za-z0-9/]+)/']
 	section_tags = [['meta[name="cg"]','content'],['meta[name="CG"]','content']]
@@ -112,8 +116,7 @@ class WSJMeta(BaseMeta):
 
 class LATimesMeta(BaseMeta):
 
-	byline_tags = [['span[class="byline"]',0],['div[class="trb-bylines"]',0],['address[class="trb_columnistInfo_columnistPortrait"]',0],['div[id="mod-article-byline"]',0],['div[class="byline"]',0],['span[class="byline"]',0],['meta[name="author"]','content']]
-	#byline_patterns = [r'((January|February|March|April|June|July|August|September|October|November|December)( \d\d?, \d\d\d\d\|)(By )?)(?P<byline>[A-Z]{1}[A-Za-z. -]+)($|, Los Angeles Times)']
+	byline_tags = [['span[class="byline"]',0],['div[class="trb-bylines"]',0],['address[class="trb_columnistInfo_columnistPortrait"]',0],['div[id="mod-article-byline"]',0,r'((January|February|March|April|June|July|August|September|October|November|December)( \d\d?, \d\d\d\d\|)(By )?)(?P<byline>[A-Z]{1}[A-Za-z. -]+)($|, Los Angeles Times)'],['div[class="byline"]',0],['span[class="byline"]',0],['meta[name="author"]','content']]
 	
 	url_section_patterns = [r'http://feeds.latimes.com/~r/(latimes/)*(?P<section>[A-Za-z/]+)/~3']
 	section_tags = [['meta[name="article.section"]','content']]
@@ -123,33 +126,21 @@ class LATimesMeta(BaseMeta):
 
 class HuffPoMeta(BaseMeta):
 
-	byline_tags = [['meta[name="author"]','content']]
+	byline_tags = [['a[rel="author"]',0],['meta[name="author"]','content']]
 	#def get_byline(self):
 	#	return BaseMeta.get_byline(self).split(' and ')
 
 
 class SalonMeta(BaseMeta):
 		
-	byline_tags = [['div[class="articleInner"] span[class="byline"]',0],['a[rel="author"]',0]]
-	def get_byline(self):
-		byline = BaseMeta.get_byline(self)
-#		if byline == '':
- #		   if self.soup.find('p', text=re.compile(r'(&#0160;){0,1}--( )?[A-Za-z\. \-]+(&#0160;){0,1}')) is not None:
-					#byline = re.match(r'(&#0160;){0,1}--( )?(?P<byline>[A-Za-z\. \-]+)(&#0160;){0,1}',self.soup.find('p', text=re.compile(r'(&#0160;){0,1}--( )?[A-Za-z\. \-]+(&#0160;){0,1}'))).group('byline')
-		return self.parse_byline(byline)
-	byline_patterns = [r'((M|m)ore ){1}(?P<byline>[A-Z]{1}[A-Za-z. -]+)']
-	def parse_byline(self, byline):
-		for reg in self.byline_patterns:
-			if re.match(reg, byline):
-				return re.match(reg, byline).group('byline')
-		return byline
+	byline_tags = [['div[class="articleInner"] span[class="byline"]',0,r'By[\s]+(?P<byline>[A-Za-z\.\- ]*)'],['a[rel="author"]',0]]
 
 
 class DailyBeastMeta(BaseMeta):
 
 	byline_tags = [['meta[name="authors"]','content'],['a[class="more-by-author"]',0],['div[class="author1"]',0]]
 
-	url_section_patterns = [r'http://(www.thedailybeast.com/|feedproxy.google.com/~r/thedailybeast/)(?P<section>[A-Za-z-]+)/(~3|item)/']
+	url_section_patterns = [r'http://(www.thedailybeast.com/|feedproxy.google.com/~r/thedailybeast/)(?P<section>[A-Za-z\-]+)/[\S]*']
 		
 
 class YaleMeta(BaseMeta):
