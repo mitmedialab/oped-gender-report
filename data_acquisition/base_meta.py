@@ -12,6 +12,11 @@ import urllib2
 import sys
 import lxml.etree
 import json
+import pdb
+import yaml
+import ml_stripper
+import nltk
+import string
 
 class BaseMeta():
 
@@ -24,29 +29,55 @@ class BaseMeta():
 		if soup:
 			self.soup = soup
 
-	def make_soup(self, stories_id=None, url=None, file_name=None, url_name=None):
+	def token_string(self,text):
+		#strip punctuation
+		exclude = set(string.punctuation)
+		return ' '.join(word for word in nltk.word_tokenize(text) if word not in exclude)
+
+
+	def make_soup(self, stories_id=None, url=None, file_name=None, url_name=None, import_full_text=False):
 		self.url = ""
+		html = None
 		self.soup = BeautifulSoup("")
+		#pdb.set_trace()
+
 		if url_name:
 			self.url = url_name
+
+    # if there is a story ID, look up the story on MediaCloud and download it all
 		if stories_id:
 			api_key = yaml.load(open('config.yaml'))['mediacloud']['api_key']
 			mc = mediacloud.api.MediaCloud(api_key)
 			story = mc.story(stories_id,raw_1st_download=1)
+			if import_full_text:
+				self.full_text = self.token_string(story[u'story_text'])
+				#print "FULLTEXT ACTIVE"
 			if not url_name:
 				try:
 					self.url = story[u'url']
 					self.soup = BeautifulSoup(story[u'raw_first_download_file'])
 				except Exception as e:
 					pass
+    # if we're fetching the page from a url
 		elif url:
 			if not url_name:
 				self.url = url
-			self.soup = BeautifulSoup(urllib2.urlopen(url).read())
+      #download the url
+			html = urllib2.urlopen(url).read()
+      #load the full html into soup
+			self.soup = BeautifulSoup(html)
 		elif file_name:
 			if not url_name:
 				self.url = file_name
-			self.soup = BeautifulSoup(open(file_name,'r').read())
+      #load the html for this page
+			html = open(file_name,'r').read()
+			self.soup = BeautifulSoup(html)
+
+    # if the HTML has been loaded and the import fulltext option is set
+    # set the fulltext variable
+		if import_full_text and html is not None:
+				self.full_text = self.token_string(ml_stripper.strip_tags(html))
+				#print "FULLTEXT ACTIVE"
 
 	byline_tags = []
 	def get_byline(self, byline_tags=None):
@@ -60,7 +91,7 @@ class BaseMeta():
 				match = re.match(tag_set[2], preparsed) if len(tag_set) > 2 else None
 				postparsed = match.group('byline').strip() if match else preparsed
 				match2 = re.match(r'(BY|By|by){1}[\s]+(?P<byline>[A-Za-z\.\- ]+)[\s\S]*', postparsed)
-				return match2.group('byline').strip() if match2 else postparsed
+				return match2.group('byline').strip() if match2 else postparsed.strip()
 		return ''
 
 	url_section_patterns = []	
@@ -84,7 +115,11 @@ class BaseMeta():
 
 	opinion_sections = []
 	def is_opinion(self, opinion_sections=None):
-		return self.get_section()[0].lower() in self.opinion_sections
+		section = self.get_section()
+		if len(self.opinion_sections) and len(section) > 0: 
+		  return self.get_section()[0].lower() in self.opinion_sections
+		else:
+		  return None
 
 
 class NYTimesMeta(BaseMeta):

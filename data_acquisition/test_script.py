@@ -9,6 +9,7 @@ from evaluation_util import *
 import StringIO
 import requests
 import re, sys, os
+import yaml
 
 MEDIA_BASEMETA_DICTIONARY = {
     '1' : base_meta.NYTimesMeta(),
@@ -34,13 +35,15 @@ DEFAULT_TEST_FILE = './test_sets/test_set_index.csv'
 
 gender_detector = BylineGender()
 
-def extract_metadata(extractor, url=None, file_name=None, stories_id=None):
-    extractor.make_soup(url=url,file_name=file_name,stories_id=stories_id)
+def extract_metadata(extractor, url=None, file_name=None, stories_id=None, import_full_text=False):
+    print "FULLTEXT:{0}".format(import_full_text)
+    extractor.make_soup(url=url,file_name=file_name,stories_id=stories_id,import_full_text=import_full_text)
     return extractor.get_byline(), extractor.get_section(), extractor.is_opinion()
     
 def __main__():
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('--fulltext', action="store_true", help="export full text of stories",default=False)
     subparsers = parser.add_subparsers(help="Test mode (e.g. on stories in a csv or MC query)",dest='mode')
     testparser = subparsers.add_parser('eval',help="Extract for loaded test data")
     mcparser = subparsers.add_parser('mediacloud',help="Extract metadata for stories returned by given query")
@@ -80,9 +83,9 @@ def __main__():
                 extractor = MEDIA_BASEMETA_DICTIONARY[str(row[0])]
             else:
                 extractor = base_meta.BaseMeta()
-            byline_download, section_download, is_opinion = extract_metadata(extractor, file_name=(MEDIA_FILEPATH_DICTIONARY[str(row[0])]+str(row[1])+'.html'))
+            byline_download, section_download, is_opinion = extract_metadata(extractor, file_name=(MEDIA_FILEPATH_DICTIONARY[str(row[0])]+str(row[1])+'.html'), import_full_text=args.fulltext)
             byline_gender = gender_detector.byline_gender(byline_download)
-            results.writerow([row[0]]+[row[1]]+[row[2]]+[byline_download]+ [byline_gender['female']] + [byline_gender['male']] + [byline_gender['unknown']]+[section_download]+[is_opinion])
+            results.writerow([row[0]]+[row[1]]+[row[2]]+[byline_download]+ [byline_gender['female']] + [byline_gender['male']] + [byline_gender['unknown']]+[section_download]+[is_opinion]+[extractor.full_text])
             if row[5].lower() == 'y':
                 actual = row[4]
             else:
@@ -112,7 +115,7 @@ def __main__():
                     for s in split_bl:
                         if not any(re.match(pattern, r.strip().lower()) for r in split_bdload):
                             missing += s+';;;'
-            eval_res.writerow([row[0]]+[row[1]]+[row[2]]+[byline_download]+[actual]+[correct]+[extra_text]+[missing]+[number]+[row[8]])
+            eval_res.writerow([row[0]]+[row[1]]+[row[2]]+[byline_download]+[actual]+[correct]+[extra_text]+[missing]+[number]+[row[8]]+[extractor.full_text])
         
     elif args.mode=='mediacloud':
         api_key = yaml.load(open('config.yaml'))['mediacloud']['api_key']
@@ -124,9 +127,10 @@ def __main__():
             else:
                 extractor = base_meta.BaseMeta()
             try:
-                byline_download, section_download = extract_metadata(extractor, stories_id=s[u'stories_id'])
+                byline_download, section_download = extract_metadata(extractor, stories_id=s[u'stories_id'], import_full_text=args.fulltext)
                 byline_gender = gender_detector.byline_gender(byline_download)
-                results.writerow([s[u'media_id']]+[s[u'stories_id']]+[s[u'publish_date']]+[s[u'url']]+[byline_download]+[section_download]+ [byline_gender['female']] + [byline_gender['male']] + [byline_gender['unknown']])
+                result_row = [s[u'media_id']]+[s[u'stories_id']]+[s[u'publish_date']]+[s[u'url']]+[byline_download]+[section_download]+ [byline_gender['female']] + [byline_gender['male']] + [byline_gender['unknown']] +[extractor.full_text]
+                results.writerow(result_row)
             except Exception as e:
                 pass
 
@@ -138,14 +142,16 @@ def __main__():
             except Exception as e:
                 extractor = base_meta.BaseMeta()
             try:
-                byline_download, section_download = extract_metadata(extractor, file_name=row['file_name'])
+                byline_download, section_download = extract_metadata(extractor, file_name=row['file_name'], import_full_text=args.fulltext)
                 byline_gender = gender_detector.byline_gender(byline_download)
-                results.writerow([row['media_id']]+[row['stories_id']]+[row['publish_date']]+[row['url']]+[byline_download]+[section_download]+ [byline_gender['female']] + [byline_gender['male']] + [byline_gender['unknown']])
+                result_row = [row['media_id']]+[row['stories_id']]+[row['publish_date']]+[row['url']]+[byline_download]+[section_download]+ [byline_gender['female']] + [byline_gender['male']] + [byline_gender['unknown']]
+                results.writerow(result_row)
             except Exception as e:
                 try:
                     byline_download, section_download = extract_metadata(extractor, stories_id=row['stories_id'])
                     byline_gender = gender_detector.byline_gender(byline_download)
-                    results.writerow([row['media_id']]+[row['stories_id']]+[row['publish_date']]+[row['url']]+[byline_download]+[section_download]+ [byline_gender['female']] + [byline_gender['male']] + [byline_gender['unknown']])
+                    result_row = [row['media_id']]+[row['stories_id']]+[row['publish_date']]+[row['url']]+[byline_download]+[section_download]+ [byline_gender['female']] + [byline_gender['male']] + [byline_gender['unknown']]
+                    results.writerow(result_row)
                 except Exception as e:
                     pass
                 pass
