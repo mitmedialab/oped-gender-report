@@ -84,7 +84,7 @@ class BaseMeta():
 
 	opinion_sections = []
 	def is_opinion(self, opinion_sections=None):
-		return self.get_section()[0].lower() in self.opinion_sections
+		return self.get_section().lower() in self.opinion_sections
 
 
 class NYTimesMeta(BaseMeta):
