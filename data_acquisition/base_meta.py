@@ -73,7 +73,7 @@ class BaseMeta():
 		for reg in self.url_section_patterns:
 			match = re.match(reg,self.url)
 			if match:
-				return (reg, match.group('section'))
+				return match.group('section')
 		for tag_set in self.section_tags:
 			found = self.soup.select(tag_set[0])
 			if found:
