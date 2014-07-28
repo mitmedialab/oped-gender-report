@@ -36,8 +36,9 @@ DEFAULT_TEST_FILE = './test_sets/test_set_index.csv'
 gender_detector = BylineGender()
 
 def extract_metadata(extractor, url=None, file_name=None, stories_id=None, import_full_text=False):
-    print "FULLTEXT:{0}".format(import_full_text)
+    #print "FULLTEXT:{0}".format(import_full_text)
     extractor.make_soup(url=url,file_name=file_name,stories_id=stories_id,import_full_text=import_full_text)
+    #import pdb; pdb.set_trace()
     return extractor.get_byline(), extractor.get_section(), extractor.is_opinion()
     
 def __main__():
@@ -67,7 +68,7 @@ def __main__():
         # create logfile to associate results with dates                     
         with open(os.path.join(eval_util.results_path, "byline_extraction.log"), "a") as extraction_log:
             extraction_log.write("{0}: {1}\n".format(datetime.datetime.now().isoformat(), eval_util.commit_number))
-        results.writerow(['media_id']+['stories_id']+['publish_date']+['byline'] + ['female_byline'] + ['male_byline'] + ['unknown_byline']+['section_download'] + ['is_opinion'])
+        results.writerow(['media_id']+['stories_id']+['publish_date']+['byline'] + ['female_byline'] + ['male_byline'] + ['unknown_byline']+['section_download'] + ['is_opinion'] + ['fulltext'])
         URL = 'https://docs.google.com/spreadsheets/d/1WAkvfgW28HBETpoBFWdfkLtuVp1SM78bVTGbtzv7mUU/export?format=csv'
         response = requests.get(URL)
         assert response.status_code == 200, 'Wrong status code'
@@ -127,11 +128,13 @@ def __main__():
             else:
                 extractor = base_meta.BaseMeta()
             try:
-                byline_download, section_download = extract_metadata(extractor, stories_id=s[u'stories_id'], import_full_text=args.fulltext)
+                byline_download, section_download, is_opinion = extract_metadata(extractor, stories_id=s[u'stories_id'], import_full_text=args.fulltext)
                 byline_gender = gender_detector.byline_gender(byline_download)
-                result_row = [s[u'media_id']]+[s[u'stories_id']]+[s[u'publish_date']]+[s[u'url']]+[byline_download]+[section_download]+ [byline_gender['female']] + [byline_gender['male']] + [byline_gender['unknown']] +[extractor.full_text]
-                results.writerow(result_row)
+                result_row = [s[u'media_id']]+[s[u'stories_id']]+[s[u'publish_date']]+[s[u'url']]+[byline_download]+[byline_gender['female']] + [byline_gender['male']] + [byline_gender['unknown']]+[section_download]+ [is_opinion] + [extractor.full_text]
+                results.writerow([unicode(s).encode("utf-8") for s in result_row])
+                sys.stdout.write('.')
             except Exception as e:
+                sys.stdout.write('x')
                 pass
 
     elif args.mode == 'file':
@@ -142,15 +145,15 @@ def __main__():
             except Exception as e:
                 extractor = base_meta.BaseMeta()
             try:
-                byline_download, section_download = extract_metadata(extractor, file_name=row['file_name'], import_full_text=args.fulltext)
+                byline_download, section_download, is_opinion= extract_metadata(extractor, file_name=row['file_name'], import_full_text=args.fulltext)
                 byline_gender = gender_detector.byline_gender(byline_download)
-                result_row = [row['media_id']]+[row['stories_id']]+[row['publish_date']]+[row['url']]+[byline_download]+[section_download]+ [byline_gender['female']] + [byline_gender['male']] + [byline_gender['unknown']]
+                result_row = [row['media_id']]+[row['stories_id']]+[row['publish_date']]+[row['url']]+[byline_download]+[byline_gender['female']] + [byline_gender['male']] + [byline_gender['unknown']]+[section_download]+ [is_opinion] + [extractor.full_text]
                 results.writerow(result_row)
             except Exception as e:
                 try:
-                    byline_download, section_download = extract_metadata(extractor, stories_id=row['stories_id'])
+                    byline_download, section_download, is_opinion= extract_metadata(extractor, stories_id=row['stories_id'])
                     byline_gender = gender_detector.byline_gender(byline_download)
-                    result_row = [row['media_id']]+[row['stories_id']]+[row['publish_date']]+[row['url']]+[byline_download]+[section_download]+ [byline_gender['female']] + [byline_gender['male']] + [byline_gender['unknown']]
+                    result_row = [row['media_id']]+[row['stories_id']]+[row['publish_date']]+[row['url']]+[byline_download]+[byline_gender['female']] + [byline_gender['male']] + [byline_gender['unknown']]+[section_download]+ [is_opinion] + [extractor.full_text]
                     results.writerow(result_row)
                 except Exception as e:
                     pass

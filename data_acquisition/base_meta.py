@@ -34,12 +34,11 @@ class BaseMeta():
 		exclude = set(string.punctuation)
 		return ' '.join(word for word in nltk.word_tokenize(text) if word not in exclude)
 
-
+	full_text = None
 	def make_soup(self, stories_id=None, url=None, file_name=None, url_name=None, import_full_text=False):
 		self.url = ""
 		html = None
 		self.soup = BeautifulSoup("")
-		#pdb.set_trace()
 
 		if url_name:
 			self.url = url_name
@@ -74,10 +73,9 @@ class BaseMeta():
 			self.soup = BeautifulSoup(html)
 
     # if the HTML has been loaded and the import fulltext option is set
-    # set the fulltext variable
-		if import_full_text and html is not None:
+    # set the full_text variable with a stripped version of html
+		if import_full_text and self.full_text is None and html is not None:
 				self.full_text = self.token_string(ml_stripper.strip_tags(html))
-				#print "FULLTEXT ACTIVE"
 
 	byline_tags = []
 	def get_byline(self, byline_tags=None):
@@ -120,7 +118,6 @@ class BaseMeta():
 		  return self.get_section()[0].lower() in self.opinion_sections
 		else:
 		  return None
-
 
 class NYTimesMeta(BaseMeta):
 
