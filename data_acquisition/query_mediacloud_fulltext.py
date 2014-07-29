@@ -47,7 +47,6 @@ def __main__():
     testparser = subparsers.add_parser('eval',help="Extract for loaded test data")
     mcparser = subparsers.add_parser('mediacloud',help="Extract metadata for stories returned by given query")
     mcparser.add_argument('--rows',default=10,action='store',dest='rows',help='number of rows')
-    mcparser.add_argument('--query',default='+publish_date:[2013-01-01T00:00:00Z TO 2013-12-31T00:00:00Z] AND +media_sets_id:1',dest='query',help='query (eg. "+publish_date:[2013-01-01T00:00:00Z TO 2013-12-31T00:00:00Z] AND +media_sets_id:1")')
     fparser = subparsers.add_parser('file',help="Extract metadata for stories listed in given file (assumes file is csv with fields for media_id, publish_date, stories_id, url, and file_name with path to file containing story's raw_first_download_file)")
     fparser.add_argument('filename',help="name of file to read story info from - assumes file is csv with stories_ids and optional path to file containing given story's raw_first_download_file")
     args = parser.parse_args()
@@ -123,7 +122,8 @@ def __main__():
     elif args.mode=='mediacloud':
         api_key = yaml.load(open('config.yaml'))['mediacloud']['api_key']
         mc = mediacloud.api.MediaCloud(api_key)
-        res = mc.sentenceList('sentence_number:1', args.query, start=0, rows=args.rows, sort='random')
+        query = '+publish_date:[2010-01-01T00:00:00Z TO 2014-07-26T00:00:00Z] AND +media_id:('+' OR '.join(MEDIA_BASEMETA_DICTIONARY.keys())+')'
+        res = mc.sentenceList('sentence_number:1', query, start=0, rows=args.rows, sort='random')
         for s in res[u'response'][u'docs']:
             if str(s[u'media_id']) in MEDIA_BASEMETA_DICTIONARY:
                 extractor = MEDIA_BASEMETA_DICTIONARY[str(s[u'media_id'])]

@@ -79,7 +79,6 @@ class BaseMeta():
 
 	byline_tags = []
 	def get_byline(self, byline_tags=None):
-		bylines = []
 		if byline_tags:
 			self.byline_tags = byline_tags
 		for tag_set in self.byline_tags:
@@ -124,7 +123,8 @@ class NYTimesMeta(BaseMeta):
 	byline_tags = [['meta[name="author"]','content'],['span[class="byline-author"]',0],['meta[name="clmst"]','content'],['meta[name="byl"]','content',r'By (?P<byline>[A-Za-z\.\- ]*)'],['meta[name="CLMST"]','content',r'By[\s]+(?P<byline>[A-Za-z\.\- ]*)'],['p[class="byline"]',0],['h6[class="byline"]',0,r'By[\s]+(?P<byline>[A-Za-z\.\- ]*)']]
 		
 	url_section_patterns = [r'http://www.nytimes.com/[0-9]{4}/[0-9]{2}/[0-9]{2}/(?P<section>[A-Za-z0-9/]+)/']
-	section_tags = [['meta[name="cg"]','content'],['meta[name="CG"]','content']]
+	section_tags = [['meta[name="CG"]','content'],['meta[name="SCG"]','content'],['meta[itemprop="articleSection"]','content'],['meta[name="PT"]','content'],['meta[name="tom"]','content'],['meta[name="PST"]','content'],['meta[name="BN"]','content']]
+
 		
 	opinion_sections = ['opinion']
 		
