@@ -188,3 +188,13 @@ class PrincetonMeta(BaseMeta):
 class ColumbiaMeta(BaseMeta):
 
 	byline_tags = [['div[class="article-authors"]',0]]
+
+
+class NYPostMeta(BaseMeta):
+
+	byline_tags = [['div[id="author-byline"]',0]]
+
+	url_section_patterns = [r'http://www.nypost.com/p/(?P<section>[A-Za-z0-9\-\\]+)/[\S]*rss&FEEDNAME=']
+	section_tags = [['meta[name="nypost-section"]','content'],['p[class="section-tag"] a[class="background-color"]',0]]
+
+	opinion_sections = ['opinion','opinions']

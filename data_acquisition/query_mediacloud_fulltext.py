@@ -15,6 +15,7 @@ MEDIA_BASEMETA_DICTIONARY = {
 	'1' : base_meta.NYTimesMeta(),
 	'2' : base_meta.WashingtonPostMeta(),
 	'6' : base_meta.LATimesMeta(),
+    '7' : base_meta.NYPostMeta(),
 	'1150' : base_meta.WSJMeta(),
 	'1757' : base_meta.SalonMeta(),
 	'1707' : base_meta.DailyBeastMeta(),
@@ -47,8 +48,9 @@ def __main__():
     testparser = subparsers.add_parser('eval',help="Extract for loaded test data")
     mcparser = subparsers.add_parser('mediacloud',help="Extract metadata for stories returned by given query")
     mcparser.add_argument('--rows',default=10,action='store',dest='rows',help='number of rows')
+    mcparser.add_argument('--media',default=' OR '.join(MEDIA_BASEMETA_DICTIONARY.keys()),dest='media',action='store',help="media_id's to query, separated by ' OR '")
     fparser = subparsers.add_parser('file',help="Extract metadata for stories listed in given file (assumes file is csv with fields for media_id, publish_date, stories_id, url, and file_name with path to file containing story's raw_first_download_file)")
-    fparser.add_argument('filename',help="name of file to read story info from - assumes file is csv with stories_ids and optional path to file containing given story's raw_first_download_file")
+    fparser.add_argument('-f','--filename',help="name of file to read story info from - assumes file is csv with stories_ids and optional path to file containing given story's raw_first_download_file")
     args = parser.parse_args()
 
 	#if args.filename:
@@ -58,6 +60,7 @@ def __main__():
 #		print extract_metadata(extractor, file_name=args.filename)
 
     results = csv.writer(open('./test_sets/current_results.csv','wb'),delimiter=',',quotechar='"',quoting=csv.QUOTE_MINIMAL)
+    results.writerow(['media_id']+['stories_id']+['publish_date']+['url']+['byline']+["byline_gender['female']"] + ["byline_gender['male']"] + ["byline_gender['unknown']"]+["section"]+ ['is_opinion'] + ['extractor.full_text'])
     
     if args.mode == 'eval':
         #load identifiers for evaluation storage                 
@@ -122,7 +125,7 @@ def __main__():
     elif args.mode=='mediacloud':
         api_key = yaml.load(open('config.yaml'))['mediacloud']['api_key']
         mc = mediacloud.api.MediaCloud(api_key)
-        query = '+publish_date:[2010-01-01T00:00:00Z TO 2014-07-26T00:00:00Z] AND +media_id:('+' OR '.join(MEDIA_BASEMETA_DICTIONARY.keys())+')'
+        query = '+publish_date:[2010-01-01T00:00:00Z TO 2014-07-26T00:00:00Z] AND +media_id:('+args.media+')'
         res = mc.sentenceList('sentence_number:1', query, start=0, rows=args.rows, sort='random')
         for s in res[u'response'][u'docs']:
             if str(s[u'media_id']) in MEDIA_BASEMETA_DICTIONARY:
