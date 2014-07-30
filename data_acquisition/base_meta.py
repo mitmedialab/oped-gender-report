@@ -87,7 +87,8 @@ class BaseMeta():
 				preparsed = found[0].text.encode('utf8') if tag_set[1] == 0 else found[0][tag_set[1]].encode('utf8')
 				match = re.match(tag_set[2], preparsed) if len(tag_set) > 2 else None
 				postparsed = match.group('byline').strip() if match else preparsed
-				match2 = re.match(r'(BY|By|by){1}[\s]+(?P<byline>[A-Za-z\.\- ]+)[\s\S]*', postparsed)
+				postparsed = re.sub(r'\s+',' ',postparsed)
+				match2 = re.match(r'(BY|By|by){1} (?P<byline>[\S ]+)', postparsed)
 				return match2.group('byline').strip() if match2 else postparsed.strip()
 		return ''
 
