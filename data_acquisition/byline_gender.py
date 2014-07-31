@@ -15,6 +15,93 @@ class BylineGender():
         gender_result[str(self.detector.guess(name))] += 1
     return gender_result
 
+  def single_name_gender(self,name):
+    return self.detector.guess(self.get_first_names(name)[0])
+
+  def strip_extras(self, byline):
+    byline = re.sub(r'general sir ','',byline)
+    byline = re.sub(r'american way: ','',byline)
+    byline = re.sub(r'president','',byline)
+    byline = re.sub(r'sir','',byline)
+    byline = re.sub(r'gov(\.)?','',byline)
+    byline = re.sub(r'rep(\.)?','',byline)
+    byline = re.sub(r'prof','',byline)
+    byline = re.sub(r'professor','',byline)
+    byline = re.sub(r'.*?rt rev(d)?','',byline)
+    byline = re.sub(r'\n.*','',byline)
+    #telegraph cleaning
+    #byline = re.sub(r'london-based.*','',byline)
+    #byline = re.sub(r'london researcher.*','',byline)
+    #byline = re.sub(r' of the.*','',byline)
+    #byline = re.sub(r'telegraph tv critic','',byline)
+    #byline = re.sub(r'broadcaster','',byline)
+    #byline = re.sub(r'interview: ','',byline)
+    #byline = re.sub(r'commentary: ','',byline)
+    #byline = re.sub(r'telegraph travel writer','',byline)
+    #byline = re.sub(r'on gigolo','',byline)
+    byline = re.sub(r'more stories by ','',byline)
+    byline = re.sub(r'founder of.*','',byline)
+    byline = re.sub(r' is (a)?.*','',byline)
+    byline = re.sub(r' covers.*','',byline)
+    byline = re.sub(r' in .*','',byline)
+    byline = re.sub(r' info.*','',byline)
+    byline = re.sub(r' writes .*','',byline)
+    byline = re.sub(r'graphic(s)? by(:)?','',byline)
+    byline = re.sub(r'compiled ','',byline)
+    byline = re.sub(r'exclusive ','',byline)
+    byline = re.sub(r'special dispatch' ,'',byline)
+    byline = re.sub(r'as told to ','',byline)
+    byline = re.sub(r' for .*','',byline)
+    byline = re.sub(r'  .*','',byline)
+    byline = re.sub(r'interview(ed)?(s)? ','',byline)
+    byline = re.sub(r' at.*','',byline)
+    #cleaning Telegraph "by"
+    byline = re.sub(r'^(by|By|BY) ','',byline)
+    byline = re.sub(r'.*? by ','',byline)
+    #remove multiple spaces in the middle of a name
+    byline = re.sub(r'\s\s',' ',byline)
+    byline = re.sub(r'\s\s',' ',byline)
+    byline = re.sub(r'^dr ','',byline)
+    byline = byline.strip().encode("utf-8")
+    return byline
+
+  # TODO: deal with commas
+  def get_full_names(self, byline):
+    byline = byline.strip().lower()
+    if byline is None or re.search('[0-9]',byline) is not None:
+      return []
+    spaces = byline.count(' ')
+    commas = byline.count(',')
+    conjunctions = byline.count(' and ')
+    semicolons = byline.count(';')
+    bylines_result = []
+    if(semicolons > 0):
+      for name in byline.split(";"):
+        if(name.count(";") > 0 or name.count(",") > 0 or name.count(" and ") > 0):
+          bylines_result = bylines_result + self.get_full_names(name)
+        else:
+          bylines_result.append(self.strip_extras(name.strip()))
+    elif(conjunctions >0):
+      for name in byline.split(' and '):
+        if(name.count(";") > 0 or name.count(",") > 0 or name.count(" and ") > 0):
+          bylines_result = bylines_result + self.get_full_names(name)
+        else:
+          bylines_result.append(self.strip_extras(name.strip()))
+    elif(commas == 0 and conjunctions == 0 and semicolons == 0):
+      bylines_result.append(self.strip_extras(byline))
+    elif(spaces >=2 and commas >=1):
+      for name in byline.split(','):
+        if(name.count(";") > 0 or name.count(",") > 0 or name.count(" and ") > 0):
+          bylines_result = bylines_result + self.get_full_names(name)
+        else:
+          bylines_result.append(self.strip_extras(name.strip()))
+
+    for junk in ['','based']:
+      if junk in bylines_result:
+        bylines_result.remove(junk)
+
+    return bylines_result
+
   def get_first_names(self, byline):
     if byline is None or re.search('[0-9]',byline) is not None:
       return []
