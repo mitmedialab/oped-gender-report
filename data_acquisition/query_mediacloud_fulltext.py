@@ -19,6 +19,7 @@ MEDIA_BASEMETA_DICTIONARY = {
 	'1150' : base_meta.WSJMeta(),
 	'1757' : base_meta.SalonMeta(),
 	'1707' : base_meta.DailyBeastMeta(),
+	'1750'     : base_meta.Telegraph(),
 	'314' : base_meta.HuffPoMeta()
 }
 
@@ -163,6 +164,7 @@ def __main__():
                 except Exception as e:
                     pass
                 pass
-                    
-__main__()
+
+if __name__ == "__main__":                    
+    __main__()
 
