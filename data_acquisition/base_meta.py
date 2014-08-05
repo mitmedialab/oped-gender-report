@@ -126,7 +126,7 @@ class BaseMeta():
 
 class NYTimesMeta(BaseMeta):
 
-	byline_tags = [['meta[name="author"]','content'],['span[class="byline-author"]',0],['meta[name="clmst"]','content'],['meta[name="byl"]','content',r'By (?P<byline>[A-Za-z\.\- ]*)'],['meta[name="CLMST"]','content',r'By[\s]+(?P<byline>[A-Za-z\.\- ]*)'],['p[class="byline"]',0],['h6[class="byline"]',0,r'By[\s]+(?P<byline>[A-Za-z\.\- ]*)']]
+	byline_tags = [['meta[name="author"]','content'],['meta[name="byl"]','content',r'By (?P<byline>[A-Za-z\.\- ]*)'],['meta[name="CLMST"]','content',r'By[\s]+(?P<byline>[A-Za-z\.\- ]*)'],['span[class="byline-author"]',0],['p[class="byline"]',0],['h6[class="byline"]',0,r'By[\s]+(?P<byline>[A-Za-z\.\- ]*)']]
 		
 	url_section_patterns = [r'http://www.nytimes.com/[0-9]{4}/[0-9]{2}/[0-9]{2}/(?P<section>[A-Za-z0-9/]+)/']
 	section_tags = [['meta[name="CG"]','content'],['meta[name="SCG"]','content'],['meta[itemprop="articleSection"]','content'],['meta[name="PT"]','content'],['meta[name="tom"]','content'],['meta[name="PST"]','content'],['meta[name="BN"]','content']]
@@ -154,7 +154,7 @@ class WSJMeta(BaseMeta):
 
 class LATimesMeta(BaseMeta):
 
-	byline_tags = [['span[class="byline"]',0],['div[class="trb-bylines"]',0],['address[class="trb_columnistInfo_columnistPortrait"]',0],['div[id="mod-article-byline"]',0,r'((January|February|March|April|June|July|August|September|October|November|December)( \d\d?, \d\d\d\d\|)(By )?)(?P<byline>[A-Z]{1}[A-Za-z. -]+)($|, Los Angeles Times)'],['div[class="byline"]',0],['span[class="byline"]',0],['meta[name="author"]','content']]
+	byline_tags = [['span[class="byline"]',0],['div[class="trb_bylines"]',0,r'(?P<byline>[A-Za-z. -]+) contact the reporter'],['address[class="trb_columnistInfo_columnistPortrait"]',0],['div[id="mod-article-byline"]',0,r'((January|February|March|April|June|July|August|September|October|November|December)( \d\d?, \d\d\d\d\|)(By )?)(?P<byline>[A-Z]{1}[A-Za-z. -]+)($|, Los Angeles Times)'],['div[class="byline"]',0],['span[class="byline"]',0],['address[class="trb_columnistInfo_contactInfo"] h4 a',0]]#,['meta[name="author"]','content']]
 	
 	url_section_patterns = [r'http://feeds.latimes.com/~r/(latimes/)*(?P<section>[A-Za-z/]+)/~3']
 	section_tags = [['meta[name="article.section"]','content']]
