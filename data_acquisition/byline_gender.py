@@ -1,10 +1,15 @@
 from gender_detector import GenderDetector
 import nltk
 import re
+import requests
+import StringIO
+import csv
+import string
 
 class BylineGender():
   def __init__(self):
     self.detector = GenderDetector('us')
+    self.load_name_org_online()
 
   def byline_gender(self,byline):
     gender_result = {"female":0, "male":0,"unknown":0}
@@ -16,7 +21,46 @@ class BylineGender():
     return gender_result
 
   def single_name_gender(self,name):
-    return self.detector.guess(self.get_first_names(name)[0])
+    if(name is None or len(name.strip()) == 0):
+      return "unknown" 
+    n = self.get_first_names(name.strip())
+    if len(n) > 0 and n[0] is not None:
+      return self.detector.guess(n[0])
+    return "unknown"
+
+  # needs error handling
+  def load_name_org_online(self):
+    self.online_names = {}
+    url="https://docs.google.com/spreadsheets/d/11R_pj7n2lhVNfVohyp-_aNxucSsMYCwixLTGp-u-9eQ/export?format=csv"
+    try:
+      response = requests.get(url)
+      csv_string = response.content
+      f = StringIO.StringIO(csv_string)
+      eval_base = csv.reader(f, delimiter=',')
+      eval_base.next()
+      for row in eval_base:
+        org = row[0]
+        name = re.sub(r'\+', " ", row[1])
+        gender = row[3]
+        if(not org in self.online_names.keys()):
+          self.online_names[org]= {}
+        if gender in ['male','female','unknown','ignore']:
+          self.online_names[org][name] = gender
+          print "{0},{1},{2}".format(org,name,gender)
+    except:
+      print "download unsuccessful"
+        
+  def org_name_gender(self,org,name):
+    manual_gender=None
+    exclude = set(string.punctuation)
+    name = ''.join(ch for ch in name if ch not in exclude)
+    if org in self.online_names.keys():
+      if name in self.online_names[org].keys():
+        manual_gender = self.online_names[org][name]
+    if manual_gender in ['male','female','unknown','ignore']:
+      return manual_gender
+    return self.single_name_gender(name)
+
 
   def strip_extras(self, byline):
     byline = re.sub(r'general sir ','',byline)
@@ -40,6 +84,7 @@ class BylineGender():
     #byline = re.sub(r'telegraph travel writer','',byline)
     #byline = re.sub(r'on gigolo','',byline)
     byline = re.sub(r'more stories by ','',byline)
+    byline = re.sub(r'view author.*','',byline)
     byline = re.sub(r'founder of.*','',byline)
     byline = re.sub(r' is (a)?.*','',byline)
     byline = re.sub(r' covers.*','',byline)
@@ -67,6 +112,8 @@ class BylineGender():
 
   # TODO: deal with commas
   def get_full_names(self, byline):
+    if byline is None:
+      return []
     byline = byline.strip().lower()
     if byline is None or re.search('[0-9]',byline) is not None:
       return []
@@ -108,12 +155,12 @@ class BylineGender():
     byline = byline.strip()
     spaces = byline.count(' ')
     commas = byline.count(',')
-    conjunctions = byline.count('and')
+    conjunctions = byline.count(' and ')
     bylines_result = []
     if(commas == 0 and conjunctions == 0):
       bylines_result.append(self.get_first_name_from_fullname(byline))
     if(conjunctions >0):
-      for name in byline.split('and'):
+      for name in byline.split(' and '):
         bylines_result.append(self.get_first_name_from_fullname(name.strip()))
     if(spaces < 3 and commas == 1):
       bylines_result.append(self.get_first_name_from_reversename(byline))
