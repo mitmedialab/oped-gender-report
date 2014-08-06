@@ -84,15 +84,15 @@ class BaseMeta():
 		for tag_set in self.byline_tags:
 			found = self.soup.select(tag_set[0])
 			if found:
-				print 'found'
-				print found[0]
-				print tag_set
+				#print 'found'
+				#print found[0]
+				#print tag_set
 				preparsed = found[0].text.encode('utf8') if tag_set[1] == 0 else found[0][tag_set[1]].encode('utf8')
-				print preparsed
+				#print preparsed
 				match = re.match(tag_set[2], preparsed) if len(tag_set) > 2 else None
 				postparsed = match.group('byline').strip() if match else preparsed
 				postparsed = re.sub(r'\s+',' ',postparsed)
-				print postparsed
+				#print postparsed
 				match2 = re.match(r'(BY|By|by){1} (?P<byline>[\S ]+)', postparsed)
 				return match2.group('byline').strip() if match2 else postparsed.strip()
 		return ''
