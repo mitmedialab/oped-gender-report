@@ -39,14 +39,14 @@ class BylineGender():
       eval_base = csv.reader(f, delimiter=',')
       eval_base.next()
       for row in eval_base:
-        org = row[0]
-        name = re.sub(r'\+', " ", row[1])
-        gender = row[3]
+        org = row[0].replace("+"," ")
+        name = row[1].replace("+"," ")
+        gender = row[4]
         if(not org in self.online_names.keys()):
           self.online_names[org]= {}
         if gender in ['male','female','unknown','ignore']:
           self.online_names[org][name] = gender
-          print "{0},{1},{2}".format(org,name,gender)
+          #print "{0},{1},{2}".format(org,name,gender)
     except:
       print "download unsuccessful"
         
