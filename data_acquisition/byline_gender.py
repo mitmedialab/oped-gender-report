@@ -5,6 +5,8 @@ import requests
 import StringIO
 import csv
 import string
+import unicodedata
+import sys
 
 class BylineGender():
   def __init__(self):
@@ -21,6 +23,15 @@ class BylineGender():
     return gender_result
 
   def single_name_gender(self,name):
+    if(name is None or len(name.strip()) == 0):
+      return "unknown" 
+    n = self.get_first_names(name.strip())
+    if len(n) > 0 and n[0] is not None:
+      return self.detector.guess(n[0])
+    return "unknown"
+
+  def single_name_gender_ascii(self,name):
+    name = unicodedata.normalize('NFKD', name).encode('ascii','ignore')
     if(name is None or len(name.strip()) == 0):
       return "unknown" 
     n = self.get_first_names(name.strip())
@@ -45,10 +56,12 @@ class BylineGender():
         if(not org in self.online_names.keys()):
           self.online_names[org]= {}
         if gender in ['male','female','unknown','ignore']:
-          self.online_names[org][name] = gender
+          self.online_names[org][name] = {}
+          self.online_names[org][name]['gender'] = gender
+          self.online_names[org][name]['count'] = row[3]
           #print "{0},{1},{2}".format(org,name,gender)
     except:
-      print "download unsuccessful"
+      print "download unsuccessful", sys.exc_info()[0]
         
   def org_name_gender(self,org,name):
     manual_gender=None
@@ -56,11 +69,29 @@ class BylineGender():
     name = ''.join(ch for ch in name if ch not in exclude)
     if org in self.online_names.keys():
       if name in self.online_names[org].keys():
-        manual_gender = self.online_names[org][name]
+        manual_gender = self.online_names[org][name]['gender']
     if manual_gender in ['male','female','unknown','ignore']:
       return manual_gender
     return self.single_name_gender(name)
 
+  def online_org_name_gender(self,org,name):
+    if org in self.online_names.keys():
+      if name in self.online_names[org].keys():
+        return self.online_names[org][name]['gender']
+    return ""
+
+  #org names is a dictionary in the format
+  #org_names[org][name] = number of articles
+  def export_org_names(self,org_names,f):
+    o_names = self.online_names.copy()
+    for org in org_names.keys():
+        for name in org_names[org].keys():
+            if org in o_names.keys() and name in o_names[org].keys():
+              o_names[org].pop(name, None)
+            f.write(','.join([org.replace(" ","+"),name.replace(" ","+"),self.single_name_gender(name),str(org_names[org][name]),self.online_org_name_gender(org,name)])+ "\n")
+    for org in o_names.keys():
+      for name in o_names[org].keys():
+        f.write(','.join([org.replace(" ","+"),name.replace(" ","+"),self.single_name_gender(name),str(self.online_names[org][name]['count']),self.online_org_name_gender(org,name)])+ "\n")
 
   def strip_extras(self, byline):
     byline = re.sub(r'general sir ','',byline)
@@ -100,6 +131,7 @@ class BylineGender():
     byline = re.sub(r'  .*','',byline)
     byline = re.sub(r'interview(ed)?(s)? ','',byline)
     byline = re.sub(r' at.*','',byline)
+    byline = re.sub(r'^\| ','',byline)
     #cleaning Telegraph "by"
     byline = re.sub(r'^(by|By|BY) ','',byline)
     byline = re.sub(r'.*? by ','',byline)
