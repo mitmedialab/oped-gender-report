@@ -1,0 +1,22 @@
+import csv
+lines = []
+with open ("evaluated_results.csv") as f:
+  reader = csv.DictReader(f)
+  for i,row in enumerate(reader):
+    lines.append(row)
+
+result_comparison = [(x['extracted byline'].lower(),x['actual byline'].lower()) for x in lines if x['Is extracted byline correct?'] == "n"]
+
+correct = len([x for x in lines if x['Is extracted byline correct?'] == "y"])
+incorrect = 0
+for result in result_comparison:
+  if(result[0].strip() == result[1].strip()):
+    correct += 1
+  else:
+    if(len(result[1])>0):
+      incorrect += 1
+
+print "correct: {0}".format(correct)
+print "incorrect: {0}".format(incorrect)
+print "accuracy: {0}".format(float(correct)/(float(correct)+float(incorrect)))
+
