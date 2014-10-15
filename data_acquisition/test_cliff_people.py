@@ -30,7 +30,7 @@ files = ["[2013-08-01T00:00:00Z TO 2013-09-01T00:00:00Z].csv",
 top = 0
 for filename in files:
     #with open (os.path.join(folder,"month_06_2014.csv")) as f:
-    with open (os.path.join(folder,files)) as f:
+    with open (os.path.join(folder,filename)) as f:
         reader = csv.DictReader(f)
         for i, row in enumerate(reader):
             lines.append(row)
